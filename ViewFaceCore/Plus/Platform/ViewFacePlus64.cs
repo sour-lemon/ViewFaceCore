@@ -1,69 +1,51 @@
-﻿using System;
-
+﻿using System.Runtime.InteropServices;
+using System.Text;
 using ViewFaceCore.Sharp.Model;
-using ViewFaceCore.Plus.Platform;
 
-namespace ViewFaceCore.Plus
+namespace ViewFaceCore.Plus.Platform
 {
     /// <summary>
-    /// 日志回调函数
+    /// x64 导入方法
     /// </summary>
-    /// <param name="logText"></param>
-    public delegate void LogCallBack(string logText);
-
-    /// <summary>
-    /// 适用于 Any CPU 的 ViewFacePlus
-    /// </summary>
-    static class ViewFacePlus
+    class ViewFacePlus64
     {
-        /// <summary>
-        /// 获取一个值，指示当前运行的处理器是否是 64位
-        /// </summary>
-        public static bool Platform64 { get; } = IntPtr.Size == 8;
+        const string LibraryPath = @"FaceLibraries\x64\ViewFace.dll";
 
         /// <summary>
         /// 设置日志回调函数(用于日志打印)
         /// </summary>
         /// <param name="writeLog"></param>
-        public static void SetLogFunction(LogCallBack writeLog)
-        {
-            if (Platform64)
-            { ViewFacePlus64.SetLogFunction(writeLog); }
-            else
-            { ViewFacePlus32.SetLogFunction(writeLog); }
-        }
+        [DllImport(LibraryPath, EntryPoint = "V_SetLogFunction", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void SetLogFunction(LogCallBack writeLog);
 
         /// <summary>
-        /// 获取或设置人脸模型目录
+        /// 设置人脸模型的目录
         /// </summary>
-        public static string ModelPath
-        {
-            get
-            {
-                if (Platform64)
-                { return ViewFacePlus64.GetModelPath(); }
-                else
-                { return ViewFacePlus32.GetModelPath(); }
-            }
-            set
-            {
-                if (Platform64)
-                { ViewFacePlus64.SetModelPath(value); }
-                else
-                { ViewFacePlus32.SetModelPath(value); }
-            }
-        }
+        /// <param name="path"></param>
+        [DllImport(LibraryPath, EntryPoint = "V_SetModelPath", CallingConvention = CallingConvention.Cdecl)]
+        private extern static void SetModelPath(byte[] path);
+        /// <summary>
+        /// 设置人脸模型的目录
+        /// </summary>
+        /// <param name="path"></param>
+        public static void SetModelPath(string path) => SetModelPath(Encoding.UTF8.GetBytes(path));
+
+        /// <summary>
+        /// 获取人脸模型的目录
+        /// </summary>
+        /// <param name="path"></param>
+        [DllImport(LibraryPath, EntryPoint = "V_GetModelPath", CallingConvention = CallingConvention.Cdecl)]
+        private extern static bool GetModelPathEx(ref string path);
+        /// <summary>
+        /// 获取人脸模型的目录
+        /// </summary>
+        public static string GetModelPath() { string path = string.Empty; GetModelPathEx(ref path); return path; }
 
         /// <summary>
         /// 释放使用的资源
         /// </summary>
-        public static void ViewDispose()
-        {
-            if (Platform64)
-            { ViewFacePlus64.ViewDispose(); }
-            else
-            { ViewFacePlus32.ViewDispose(); }
-        }
+        [DllImport(LibraryPath, EntryPoint = "V_Dispose", CallingConvention = CallingConvention.Cdecl)]
+        public extern static void ViewDispose();
 
         /// <summary>
         /// 人脸检测器检测到的人脸数量
@@ -78,17 +60,12 @@ namespace ViewFaceCore.Plus
         /// <param name="maxHeight">可检测的图像最大高度。默认值2000。</param>
         /// <param name="type">模型类型。0：face_detector；1：mask_detector；2：mask_detector。</param>
         /// <returns></returns>
-        public static int DetectorSize(byte[] imgData, ref FaceImage img,
-            double faceSize = 20, double threshold = 0.9, double maxWidth = 2000, double maxHeight = 2000, int type = 0)
-        {
-            if (Platform64)
-            { return ViewFacePlus64.DetectorSize(imgData, ref img, faceSize, threshold, maxWidth, maxHeight, type); }
-            else
-            { return ViewFacePlus32.DetectorSize(imgData, ref img, faceSize, threshold, maxWidth, maxHeight, type); }
-        }
+        [DllImport(LibraryPath, EntryPoint = "V_DetectorSize", CallingConvention = CallingConvention.Cdecl)]
+        public extern static int DetectorSize(byte[] imgData, ref FaceImage img,
+            double faceSize = 20, double threshold = 0.9, double maxWidth = 2000, double maxHeight = 2000, int type = 0);
         /// <summary>
         /// 人脸检测器
-        /// <para>调用此方法前必须先调用 <see cref="DetectorSize(byte[], ref FaceImage, double, double, double, double, int)"/></para>
+        /// <para>调用此方法前必须先调用 <see cref="DetectorSize"/></para>
         /// </summary>
         /// <param name="score">人脸置信度集合</param>
         /// <param name="x">人脸位置集合</param>
@@ -96,26 +73,16 @@ namespace ViewFaceCore.Plus
         /// <param name="width">人脸大小集合</param>
         /// <param name="height">人脸大小集合</param>
         /// <returns></returns>
-        public static bool Detector(float[] score, int[] x, int[] y, int[] width, int[] height)
-        {
-            if (Platform64)
-            { return ViewFacePlus64.Detector(score, x, y, width, height); }
-            else
-            { return ViewFacePlus32.Detector(score, x, y, width, height); }
-        }
+        [DllImport(LibraryPath, EntryPoint = "V_Detector", CallingConvention = CallingConvention.Cdecl)]
+        public extern static bool Detector(float[] score, int[] x, int[] y, int[] width, int[] height);
 
         /// <summary>
         /// 人脸关键点数量
         /// </summary>
         /// <param name="type">模型类型。0：face_landmarker_pts68；1：face_landmarker_mask_pts5；2：face_landmarker_pts5。</param>
         /// <returns></returns>
-        public static int FaceMarkSize(int type = 0)
-        {
-            if (Platform64)
-            { return ViewFacePlus64.FaceMarkSize(type); }
-            else
-            { return ViewFacePlus32.FaceMarkSize(type); }
-        }
+        [DllImport(LibraryPath, EntryPoint = "V_FaceMarkSize", CallingConvention = CallingConvention.Cdecl)]
+        public extern static int FaceMarkSize(int type = 0);
         /// <summary>
         /// 获取人脸关键点
         /// </summary>
@@ -126,27 +93,17 @@ namespace ViewFaceCore.Plus
         /// <param name="pointY">存储关键点 y 坐标的 数组</param>
         /// <param name="type">模型类型。0：face_landmarker_pts68；1：face_landmarker_mask_pts5；2：face_landmarker_pts5。</param>
         /// <returns></returns>
-        public static bool FaceMark(byte[] imgData, ref FaceImage img,
-            FaceRect faceRect, double[] pointX, double[] pointY, int type = 0)
-        {
-            if (Platform64)
-            { return ViewFacePlus64.FaceMark(imgData, ref img, faceRect, pointX, pointY, type); }
-            else
-            { return ViewFacePlus32.FaceMark(imgData, ref img, faceRect, pointX, pointY, type); }
-        }
+        [DllImport(LibraryPath, EntryPoint = "V_FaceMark", CallingConvention = CallingConvention.Cdecl)]
+        public extern static bool FaceMark(byte[] imgData, ref FaceImage img,
+            FaceRect faceRect, double[] pointX, double[] pointY, int type = 0);
 
         /// <summary>
         /// 获取人脸特征值长度
         /// </summary>
         /// <param name="type">模型类型。0：face_recognizer；1：face_recognizer_mask；2：face_recognizer_light。</param>
         /// <returns></returns>
-        public static int ExtractSize(int type = 0)
-        {
-            if (Platform64)
-            { return ViewFacePlus64.ExtractSize(type); }
-            else
-            { return ViewFacePlus32.ExtractSize(type); }
-        }
+        [DllImport(LibraryPath, EntryPoint = "V_ExtractSize", CallingConvention = CallingConvention.Cdecl)]
+        public extern static int ExtractSize(int type = 0);
         /// <summary>
         /// 提取人脸特征值
         /// </summary>
@@ -156,14 +113,9 @@ namespace ViewFaceCore.Plus
         /// <param name="features">人脸特征值 数组</param>
         /// <param name="type">模型类型。0：face_recognizer；1：face_recognizer_mask；2：face_recognizer_light。</param>
         /// <returns></returns>
-        public static bool Extract(byte[] imgData, ref FaceImage img,
-            FaceMarkPoint[] points, float[] features, int type = 0)
-        {
-            if (Platform64)
-            { return ViewFacePlus64.Extract(imgData, ref img, points, features, type); }
-            else
-            { return ViewFacePlus32.Extract(imgData, ref img, points, features, type); }
-        }
+        [DllImport(LibraryPath, EntryPoint = "V_Extract", CallingConvention = CallingConvention.Cdecl)]
+        public extern static bool Extract(byte[] imgData, ref FaceImage img,
+            FaceMarkPoint[] points, float[] features, int type = 0);
 
         /// <summary>
         /// 计算相似度
@@ -172,13 +124,8 @@ namespace ViewFaceCore.Plus
         /// <param name="rightFeatures"></param>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static float Similarity(float[] leftFeatures, float[] rightFeatures, int type = 0)
-        {
-            if (Platform64)
-            { return ViewFacePlus64.Similarity(leftFeatures, rightFeatures, type); }
-            else
-            { return ViewFacePlus32.Similarity(leftFeatures, rightFeatures, type); }
-        }
+        [DllImport(LibraryPath, EntryPoint = "V_CalculateSimilarity", CallingConvention = CallingConvention.Cdecl)]
+        public extern static float Similarity(float[] leftFeatures, float[] rightFeatures, int type = 0);
 
         /// <summary>
         /// 活体检测器
@@ -190,14 +137,9 @@ namespace ViewFaceCore.Plus
         /// <param name="points">人脸关键点 数组</param>
         /// <param name="global">是否启用全局检测</param>
         /// <returns>单帧识别返回值会是 <see cref="AntiSpoofingStatus.Real"/>、<see cref="AntiSpoofingStatus.Spoof"/> 或 <see cref="AntiSpoofingStatus.Fuzzy"/></returns>
-        public static int AntiSpoofing(byte[] imgData, ref FaceImage img,
-            FaceRect faceRect, FaceMarkPoint[] points, bool global)
-        {
-            if (Platform64)
-            { return ViewFacePlus64.AntiSpoofing(imgData, ref img, faceRect, points, global); }
-            else
-            { return ViewFacePlus32.AntiSpoofing(imgData, ref img, faceRect, points, global); }
-        }
+        [DllImport(LibraryPath, EntryPoint = "V_AntiSpoofing", CallingConvention = CallingConvention.Cdecl)]
+        public extern static int AntiSpoofing(byte[] imgData, ref FaceImage img,
+            FaceRect faceRect, FaceMarkPoint[] points, bool global);
         /// <summary>
         /// 活体检测器
         /// <para>视频帧</para>
@@ -213,14 +155,9 @@ namespace ViewFaceCore.Plus
         /// 在视频识别输入帧数不满足需求的时候，返回状态就是 <see cref="AntiSpoofingStatus.Detecting"/>
         /// </para>
         /// </returns>
-        public static int AntiSpoofingVideo(byte[] imgData, ref FaceImage img,
-            FaceRect faceRect, FaceMarkPoint[] points, bool global)
-        {
-            if (Platform64)
-            { return ViewFacePlus64.AntiSpoofingVideo(imgData, ref img, faceRect, points, global); }
-            else
-            { return ViewFacePlus32.AntiSpoofingVideo(imgData, ref img, faceRect, points, global); }
-        }
+        [DllImport(LibraryPath, EntryPoint = "V_AntiSpoofingVideo", CallingConvention = CallingConvention.Cdecl)]
+        public extern static int AntiSpoofingVideo(byte[] imgData, ref FaceImage img,
+            FaceRect faceRect, FaceMarkPoint[] points, bool global);
 
         /// <summary>
         /// 获取跟踪的人脸个数
@@ -233,15 +170,10 @@ namespace ViewFaceCore.Plus
         /// <param name="threshold"></param>
         /// <param name="type">模型类型。0：face_detector；1：mask_detector；2：mask_detector。</param>
         /// <returns></returns>
-        public static int FaceTrackSize(byte[] imgData, ref FaceImage img,
+        [DllImport(LibraryPath, EntryPoint = "V_FaceTrackSize", CallingConvention = CallingConvention.Cdecl)]
+        public extern static int FaceTrackSize(byte[] imgData, ref FaceImage img,
             bool stable = false, int interval = 10,
-            double faceSize = 20, double threshold = 0.9, int type = 0)
-        {
-            if (Platform64)
-            { return ViewFacePlus64.FaceTrackSize(imgData, ref img, stable, interval, faceSize, threshold, type); }
-            else
-            { return ViewFacePlus32.FaceTrackSize(imgData, ref img, stable, interval, faceSize, threshold, type); }
-        }
+            double faceSize = 20, double threshold = 0.9, int type = 0);
 
         /// <summary>
         /// 人脸跟踪信息
@@ -253,13 +185,8 @@ namespace ViewFaceCore.Plus
         /// <param name="width">人脸大小 width 数组</param>
         /// <param name="height">人脸大小 height 数组</param>
         /// <returns></returns>
-        public static bool FaceTrack(float[] score, int[] PID, int[] x, int[] y, int[] width, int[] height)
-        {
-            if (Platform64)
-            { return ViewFacePlus64.FaceTrack(score, PID, x, y, width, height); }
-            else
-            { return ViewFacePlus32.FaceTrack(score, PID, x, y, width, height); }
-        }
+        [DllImport(LibraryPath, EntryPoint = "V_FaceTrack", CallingConvention = CallingConvention.Cdecl)]
+        public extern static bool FaceTrack(float[] score, int[] PID, int[] x, int[] y, int[] width, int[] height);
 
         /// <summary>
         /// 亮度评估。
@@ -284,15 +211,10 @@ namespace ViewFaceCore.Plus
         /// <param name="v2"></param>
         /// <param name="v3"></param>
         /// <returns></returns>
-        public static bool QualityOfBrightness(byte[] imgData, ref FaceImage img,
+        [DllImport(LibraryPath, EntryPoint = "V_QualityOfBrightness", CallingConvention = CallingConvention.Cdecl)]
+        public extern static bool QualityOfBrightness(byte[] imgData, ref FaceImage img,
             FaceRect faceRect, FaceMarkPoint[] points, int pointsLength, ref int level, ref float score,
-            float v0 = 70, float v1 = 100, float v2 = 210, float v3 = 230)
-        {
-            if (Platform64)
-            { return ViewFacePlus64.QualityOfBrightness(imgData, ref img, faceRect, points, pointsLength, ref level, ref score, v0, v1, v2, v3); }
-            else
-            { return ViewFacePlus32.QualityOfBrightness(imgData, ref img, faceRect, points, pointsLength, ref level, ref score, v0, v1, v2, v3); }
-        }
+            float v0 = 70, float v1 = 100, float v2 = 210, float v3 = 230);
 
         /// <summary>
         /// 清晰度评估。
@@ -315,23 +237,10 @@ namespace ViewFaceCore.Plus
         /// <param name="low"></param>
         /// <param name="high"></param>
         /// <returns></returns>
-        public static bool QualityOfClarity(byte[] imgData, ref FaceImage img,
+        [DllImport(LibraryPath, EntryPoint = "V_QualityOfClarity", CallingConvention = CallingConvention.Cdecl)]
+        public extern static bool QualityOfClarity(byte[] imgData, ref FaceImage img,
             FaceRect faceRect, FaceMarkPoint[] points, int pointsLength, ref int level, ref float score,
-            float low = 0.1f, float high = 0.2f)
-        {
-            if (Platform64)
-            {
-                return ViewFacePlus64.QualityOfClarity(imgData, ref img,
-                  faceRect, points, pointsLength, ref level, ref score,
-                  low, high);
-            }
-            else
-            {
-                return ViewFacePlus32.QualityOfClarity(imgData, ref img,
-                  faceRect, points, pointsLength, ref level, ref score,
-                  low, high);
-            }
-        }
+            float low = 0.1f, float high = 0.2f);
 
         /// <summary>
         /// 完整度评估。
@@ -354,23 +263,10 @@ namespace ViewFaceCore.Plus
         /// <param name="low"></param>
         /// <param name="high"></param>
         /// <returns></returns>
-        public static bool QualityOfIntegrity(byte[] imgData, ref FaceImage img,
+        [DllImport(LibraryPath, EntryPoint = "V_QualityOfIntegrity", CallingConvention = CallingConvention.Cdecl)]
+        public extern static bool QualityOfIntegrity(byte[] imgData, ref FaceImage img,
             FaceRect faceRect, FaceMarkPoint[] points, int pointsLength, ref int level, ref float score,
-            float low = 10, float high = 1.5f)
-        {
-            if (Platform64)
-            {
-                return ViewFacePlus64.QualityOfIntegrity(imgData, ref img,
-                  faceRect, points, pointsLength, ref level, ref score,
-                  low, high);
-            }
-            else
-            {
-                return ViewFacePlus32.QualityOfIntegrity(imgData, ref img,
-                  faceRect, points, pointsLength, ref level, ref score,
-                  low, high);
-            }
-        }
+            float low = 10f, float high = 1.5f);
 
         /// <summary>
         /// 姿态评估。
@@ -384,20 +280,9 @@ namespace ViewFaceCore.Plus
         /// <param name="level">存储 等级</param>
         /// <param name="score">存储 分数</param>
         /// <returns></returns>
-        public static bool QualityOfPose(byte[] imgData, ref FaceImage img,
-            FaceRect faceRect, FaceMarkPoint[] points, int pointsLength, ref int level, ref float score)
-        {
-            if (Platform64)
-            {
-                return ViewFacePlus64.QualityOfPose(imgData, ref img,
-                  faceRect, points, pointsLength, ref level, ref score);
-            }
-            else
-            {
-                return ViewFacePlus32.QualityOfPose(imgData, ref img,
-                  faceRect, points, pointsLength, ref level, ref score);
-            }
-        }
+        [DllImport(LibraryPath, EntryPoint = "V_QualityOfPose", CallingConvention = CallingConvention.Cdecl)]
+        public extern static bool QualityOfPose(byte[] imgData, ref FaceImage img,
+            FaceRect faceRect, FaceMarkPoint[] points, int pointsLength, ref int level, ref float score);
 
         /// <summary>
         /// 姿态评估 (深度)。
@@ -420,23 +305,10 @@ namespace ViewFaceCore.Plus
         /// <param name="rollLow">roll 方向低分数阈值</param>
         /// <param name="rollHigh">roll 方向高分数阈值</param>
         /// <returns></returns>
-        public static bool QualityOfPoseEx(byte[] imgData, ref FaceImage img,
+        [DllImport(LibraryPath, EntryPoint = "V_QualityOfPoseEx", CallingConvention = CallingConvention.Cdecl)]
+        public extern static bool QualityOfPoseEx(byte[] imgData, ref FaceImage img,
             FaceRect faceRect, FaceMarkPoint[] points, int pointsLength, ref int level, ref float score,
-            float yawLow = 25, float yawHigh = 10, float pitchLow = 20, float pitchHigh = 10, float rollLow = 33.33f, float rollHigh = 16.67f)
-        {
-            if (Platform64)
-            {
-                return ViewFacePlus64.QualityOfPoseEx(imgData, ref img,
-                  faceRect, points, pointsLength, ref level, ref score,
-                  yawLow, yawHigh, pitchLow, pitchHigh, rollLow, rollHigh);
-            }
-            else
-            {
-                return ViewFacePlus32.QualityOfPoseEx(imgData, ref img,
-                  faceRect, points, pointsLength, ref level, ref score,
-                  yawLow, yawHigh, pitchLow, pitchHigh, rollLow, rollHigh);
-            }
-        }
+            float yawLow = 25, float yawHigh = 10, float pitchLow = 20, float pitchHigh = 10, float rollLow = 33.33f, float rollHigh = 16.67f);
 
         /// <summary>
         /// 分辨率评估。
@@ -459,23 +331,10 @@ namespace ViewFaceCore.Plus
         /// <param name="low"></param>
         /// <param name="high"></param>
         /// <returns></returns>
-        public static bool QualityOfResolution(byte[] imgData, ref FaceImage img,
+        [DllImport(LibraryPath, EntryPoint = "V_QualityOfResolution", CallingConvention = CallingConvention.Cdecl)]
+        public extern static bool QualityOfResolution(byte[] imgData, ref FaceImage img,
             FaceRect faceRect, FaceMarkPoint[] points, int pointsLength, ref int level, ref float score,
-            float low = 80, float high = 120)
-        {
-            if (Platform64)
-            {
-                return ViewFacePlus64.QualityOfResolution(imgData, ref img,
-                  faceRect, points, pointsLength, ref level, ref score,
-                  low, high);
-            }
-            else
-            {
-                return ViewFacePlus32.QualityOfResolution(imgData, ref img,
-                  faceRect, points, pointsLength, ref level, ref score,
-                  low, high);
-            }
-        }
+            float low = 80, float high = 120);
 
         /// <summary>
         /// 清晰度 (深度)评估。
@@ -494,30 +353,14 @@ namespace ViewFaceCore.Plus
         /// <param name="score">存储 分数</param>
         /// <param name="blur_thresh"></param>
         /// <returns></returns>
-        public static bool QualityOfClarityEx(byte[] imgData, ref FaceImage img,
+        [DllImport(LibraryPath, EntryPoint = "V_QualityOfClarityEx", CallingConvention = CallingConvention.Cdecl)]
+        public extern static bool QualityOfClarityEx(byte[] imgData, ref FaceImage img,
             FaceRect faceRect, FaceMarkPoint[] points, int pointsLength, ref int level, ref float score,
-            float blur_thresh = 0.8f)
-        {
-            if (Platform64)
-            {
-                return ViewFacePlus64.QualityOfClarityEx(imgData, ref img,
-                  faceRect, points, pointsLength, ref level, ref score,
-                  blur_thresh);
-            }
-            else
-            {
-                return ViewFacePlus32.QualityOfClarityEx(imgData, ref img,
-                  faceRect, points, pointsLength, ref level, ref score,
-                  blur_thresh);
-            }
-        }
+            float blur_thresh = 0.8f);
 
         /// <summary>
         /// 遮挡评估。
-        /// <para>
-        /// 判断人脸部分的分辨率。 <br />
-        /// 需要模型 <see langword="face_landmarker_mask_pts5.csta"/> 
-        /// </para>
+        /// <para>判断人脸部分的分辨率。</para>
         /// </summary>
         /// <param name="imgData">图像 BGR 数据</param>
         /// <param name="img">图像宽高通道信息</param>
@@ -527,65 +370,34 @@ namespace ViewFaceCore.Plus
         /// <param name="level">存储 等级</param>
         /// <param name="score">存储 分数</param>
         /// <returns></returns>
-        public static bool QualityOfNoMask(byte[] imgData, ref FaceImage img,
-            FaceRect faceRect, FaceMarkPoint[] points, int pointsLength, ref int level, ref float score)
-        {
-            if (Platform64)
-            {
-                return ViewFacePlus64.QualityOfNoMask(imgData, ref img,
-                  faceRect, points, pointsLength, ref level, ref score);
-            }
-            else
-            {
-                return ViewFacePlus32.QualityOfNoMask(imgData, ref img,
-                  faceRect, points, pointsLength, ref level, ref score);
-            }
-        }
+        [DllImport(LibraryPath, EntryPoint = "V_QualityOfNoMask", CallingConvention = CallingConvention.Cdecl)]
+        public extern static bool QualityOfNoMask(byte[] imgData, ref FaceImage img,
+            FaceRect faceRect, FaceMarkPoint[] points, int pointsLength, ref int level, ref float score);
 
         /// <summary>
-        /// 年龄预测。
-        /// <para>
-        /// 需要模型 <see langword="age_predictor.csta"/> 
-        /// </para>
+        /// 人脸年龄预测。
         /// </summary>
         /// <param name="imgData">图像 BGR 数据</param>
         /// <param name="img">图像宽高通道信息</param>
         /// <param name="points">人脸关键点 数组</param>
         /// <param name="pointsLength">人脸关键点 数组长度</param>
-        /// <returns></returns>
-        public static int AgePredictor(byte[] imgData, ref FaceImage img, FaceMarkPoint[] points, int pointsLength)
-        {
-            if (Platform64)
-            { return ViewFacePlus64.AgePredictor(imgData, ref img, points, pointsLength); }
-            else
-            { return ViewFacePlus32.AgePredictor(imgData, ref img, points, pointsLength); }
-        }
+        /// <returns>-1 则为失败，否则为预测年龄</returns>
+        [DllImport(LibraryPath, EntryPoint = "V_AgePredictor", CallingConvention = CallingConvention.Cdecl)]
+        public extern static int AgePredictor(byte[] imgData, ref FaceImage img, FaceMarkPoint[] points, int pointsLength);
 
         /// <summary>
-        /// 性别预测。
-        /// <para>
-        /// 需要模型 <see langword="gender_predictor.csta"/> 
-        /// </para>
+        /// 人脸性别预测。
         /// </summary>
         /// <param name="imgData">图像 BGR 数据</param>
         /// <param name="img">图像宽高通道信息</param>
         /// <param name="points">人脸关键点 数组</param>
         /// <param name="pointsLength">人脸关键点 数组长度</param>
-        /// <returns></returns>
-        public static int GenderPredictor(byte[] imgData, ref FaceImage img, FaceMarkPoint[] points, int pointsLength)
-        {
-            if (Platform64)
-            { return ViewFacePlus64.GenderPredictor(imgData, ref img, points, pointsLength); }
-            else
-            { return ViewFacePlus32.GenderPredictor(imgData, ref img, points, pointsLength); }
-        }
-
+        /// <returns>-1 则为失败，否则为预测年龄</returns>
+        [DllImport(LibraryPath, EntryPoint = "V_GenderPredictor", CallingConvention = CallingConvention.Cdecl)]
+        public extern static int GenderPredictor(byte[] imgData, ref FaceImage img, FaceMarkPoint[] points, int pointsLength);
 
         /// <summary>
         /// 眼睛状态检测。
-        /// <para>
-        /// 需要模型 <see langword="eye_state.csta"/> 
-        /// </para>
         /// </summary>
         /// <param name="imgData">图像 BGR 数据</param>
         /// <param name="img">图像宽高通道信息</param>
@@ -594,13 +406,8 @@ namespace ViewFaceCore.Plus
         /// <param name="left_eye"></param>
         /// <param name="right_eye"></param>
         /// <returns></returns>
-        public static bool EyeStateDetector(byte[] imgData, ref FaceImage img, FaceMarkPoint[] points, int pointsLength,
-            ref int left_eye, ref int right_eye)
-        {
-            if (Platform64)
-            { return ViewFacePlus64.EyeStateDetector(imgData, ref img, points, pointsLength, ref left_eye, ref right_eye); }
-            else
-            { return ViewFacePlus32.EyeStateDetector(imgData, ref img, points, pointsLength, ref left_eye, ref right_eye); }
-        }
+        [DllImport(LibraryPath, EntryPoint = "V_EyeStateDetector", CallingConvention = CallingConvention.Cdecl)]
+        public extern static bool EyeStateDetector(byte[] imgData, ref FaceImage img, FaceMarkPoint[] points, int pointsLength,
+            ref int left_eye, ref int right_eye);
     }
 }
